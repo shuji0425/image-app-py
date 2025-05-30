@@ -1,4 +1,5 @@
 venv/
+data/
 
 # その他のファイル
 .DS_Store
