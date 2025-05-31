@@ -1,17 +1,17 @@
 import torch
-from torchvision import datasets, transforms
-from torch.utils.data import DataLoader
 import torch.nn as nn
 import torch.optim as optim
 
+from tqdm import tqdm
+from torchvision import datasets
+from torch.utils.data import DataLoader
+
 # CNN 読み込み
 from models.simple_cnn import SimpleCNN
+from utils.dataset import get_default_transform
 
 # 画像を Tensor に変換し、0~1の範囲に正規化する変換器
-transform = transforms.Compose([
-    transforms.ToTensor(),
-    transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)) # 平均と標準偏差で正規化
-])
+transform = get_default_transform()
 
 # CIFAR-10 の学習用データセット
 train_dataset = datasets.CIFAR10(
@@ -41,7 +41,9 @@ optimizer = optim.Adam(model.parameters(), lr=0.001)
 num_epochs = 1
 for epoch in range(num_epochs):
     running_loss = 0.0
-    for i, (inputs, labels) in enumerate (train_loader):
+    for i, (inputs, labels) in tqdm(enumerate(train_loader),
+                                    total=len(train_loader),
+                                    desc=f"Epoch {epoch+1}/{num_epochs}"):
         inputs, labels = inputs.to(device), labels.to(device)
 
         optimizer.zero_grad()             # 勾配を初期化
@@ -55,4 +57,5 @@ for epoch in range(num_epochs):
             print(f"[{epoch+1}, {i+1:5d}] loss: {running_loss / 100:.3f}")
             running_loss = 0.0
 
+torch.save(model.state_dict(), "./outputs/simple_cnn.pth")
 print("学習完了")

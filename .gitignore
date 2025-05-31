@@ -1,5 +1,6 @@
 venv/
 data/
+outputs/
 
 # その他のファイル
 .DS_Store
