@@ -1,6 +1,11 @@
 import torch
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
+import torch.nn as nn
+import torch.optim as optim
+
+# CNN 読み込み
+from models.simple_cnn import SimpleCNN
 
 # 画像を Tensor に変換し、0~1の範囲に正規化する変換器
 transform = transforms.Compose([
@@ -9,7 +14,7 @@ transform = transforms.Compose([
 ])
 
 # CIFAR-10 の学習用データセット
-train_detaset = datasets.CIFAR10(
+train_dataset = datasets.CIFAR10(
     root="./data",      # 保存先のフォルダ
     train=True,         # 学習用データ
     download=True,      # データがなければダウンロード
@@ -18,16 +23,36 @@ train_detaset = datasets.CIFAR10(
 
 # データローダーを作成
 train_loader = DataLoader(
-    train_detaset, # 対象データセット
+    train_dataset, # 対象データセット
     batch_size=8,  # 一度に取り出す画像数
     shuffle=True   # 毎回順序をシャッフル
 )
 
-# バッチ1つを取り出して確認
-data_iter = iter(train_loader)
-images, labels = next(data_iter)
+# モデル、損失関数、最適化手法の設定
+device = torch.device("cpu")
+model = SimpleCNN().to(device)
 
-# バッチの形状を表示
-print("画像の形状:", images.shape)
-print("ラベルの形状:", labels.shape)
-print("ラベル:", labels)
+#損失関数
+criterion = nn.CrossEntropyLoss()
+# Adamで学習率0.001
+optimizer = optim.Adam(model.parameters(), lr=0.001)
+
+# 学習ループ
+num_epochs = 1
+for epoch in range(num_epochs):
+    running_loss = 0.0
+    for i, (inputs, labels) in enumerate (train_loader):
+        inputs, labels = inputs.to(device), labels.to(device)
+
+        optimizer.zero_grad()             # 勾配を初期化
+        outputs = model(inputs)           # 推論
+        loss = criterion(outputs, labels) # 損失計算
+        loss.backward()                   # 誤差逆伝播
+        optimizer.step()                  # パラメータ更新
+
+        running_loss += loss.item()
+        if i % 100 == 99:
+            print(f"[{epoch+1}, {i+1:5d}] loss: {running_loss / 100:.3f}")
+            running_loss = 0.0
+
+print("学習完了")
